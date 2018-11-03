@@ -21,10 +21,6 @@ class ContextHandler {
         }
         this.counterTimes++;
     }
-
-    toString() {
-        return `context: ${this.context.toString()}, handler: ${this.handler.toString()}`;
-    }
 }
 
 /**
