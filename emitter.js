@@ -7,7 +7,7 @@
 const isStar = true;
 
 class ContextHandler {
-    constructor(context, handler, times = Infinity, frequency = 1) {
+    constructor(context, handler, times, frequency) {
         this.context = context;
         this.handler = handler;
         this.times = times <= 0 ? Infinity : times;
@@ -56,8 +56,6 @@ function getEmitter() {
          * @returns {Object}
          */
         on: function (event, context, handler) {
-            console.info(event, context, handler);
-
             getContextsHandlerByEvent(event).push(getContextsHandler(context, handler));
 
             return this;
@@ -70,8 +68,6 @@ function getEmitter() {
          * @returns {Object}
          */
         off: function (event, context) {
-            console.info(event, context);
-
             const offEventsReg = new RegExp(`^(?:${event}|(?:${event}\\.+.*))$`);
             const offEvents = Array.from(events.keys()).filter(e => offEventsReg.test(e));
 
@@ -93,7 +89,6 @@ function getEmitter() {
          * @returns {Object}
          */
         emit: function (event) {
-            console.info(event);
             let currentEvent = event;
             let nextEventLength = 0;
 
@@ -119,8 +114,6 @@ function getEmitter() {
          * @returns {Object}
          */
         several: function (event, context, handler, times) {
-            console.info(event, context, handler, times);
-
             getContextsHandlerByEvent(event).push(getContextsHandler(context, handler, times));
 
             return this;
@@ -136,8 +129,6 @@ function getEmitter() {
          * @returns {Object}
          */
         through: function (event, context, handler, frequency) {
-            console.info(event, context, handler, frequency);
-
             getContextsHandlerByEvent(event)
                 .push(getContextsHandler(context, handler, Infinity, frequency));
 
