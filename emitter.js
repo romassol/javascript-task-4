@@ -7,16 +7,25 @@
 const isStar = true;
 
 class ContextHandler {
-    constructor(context, handler, times, frequency) {
+    constructor(context, handler, times = Infinity, frequency = 1) {
         this.context = context;
-        this.handler = handler;
+        this.handler = function () {
+            return;
+        };
+        this.setHandler(handler);
         this.times = times <= 0 ? Infinity : times;
         this.frequency = frequency <= 0 ? 1 : frequency;
         this.counterTimes = 0;
     }
 
+    setHandler(handler) {
+        if (handler) {
+            this.handler = handler;
+        }
+    }
+
     emit() {
-        if (this.counterTimes < this.times && (this.counterTimes % this.frequency) === 0) {
+        if ((this.counterTimes < this.times) && (this.counterTimes % this.frequency === 0)) {
             this.handler.call(this.context);
         }
         this.counterTimes++;
@@ -30,16 +39,17 @@ class ContextHandler {
 function getEmitter() {
     const events = new Map();
 
-    function getContextsHandlerByEvent(event) {
+    function subscribeToEvent(event, contextHandler) {
         if (!events.has(event)) {
             events.set(event, []);
         }
-
-        return events.get(event);
+        events.get(event).push(contextHandler);
     }
 
-    function getContextsHandler(context, handler, times = Infinity, frequency = 1) {
-        return new ContextHandler(context, handler, times, frequency);
+    function set(event, filterCondition) {
+        const contextHandlers = events.get(event).filter(filterCondition);
+
+        events.set(event, contextHandlers);
     }
 
     return {
@@ -52,7 +62,7 @@ function getEmitter() {
          * @returns {Object}
          */
         on: function (event, context, handler) {
-            getContextsHandlerByEvent(event).push(getContextsHandler(context, handler));
+            subscribeToEvent(event, new ContextHandler(context, handler));
 
             return this;
         },
@@ -68,12 +78,7 @@ function getEmitter() {
             const offEvents = Array.from(events.keys()).filter(e => offEventsReg.test(e));
 
             offEvents.forEach(offEvent => {
-                const contextsHandler = events.get(offEvent);
-                for (let i = contextsHandler.length - 1; i >= 0; i--) {
-                    if (contextsHandler[i].context === context) {
-                        contextsHandler.splice(i, 1);
-                    }
-                }
+                set(offEvent, ch => ch.context !== context);
             });
 
             return this;
@@ -110,7 +115,7 @@ function getEmitter() {
          * @returns {Object}
          */
         several: function (event, context, handler, times) {
-            getContextsHandlerByEvent(event).push(getContextsHandler(context, handler, times));
+            subscribeToEvent(event, new ContextHandler(context, handler, times));
 
             return this;
         },
@@ -125,8 +130,7 @@ function getEmitter() {
          * @returns {Object}
          */
         through: function (event, context, handler, frequency) {
-            getContextsHandlerByEvent(event)
-                .push(getContextsHandler(context, handler, Infinity, frequency));
+            subscribeToEvent(event, new ContextHandler(context, handler, Infinity, frequency));
 
             return this;
         }
